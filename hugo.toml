@@ -1,0 +1,19 @@
+baseURL = 'https://example.org/'
+languageCode = 'en-us'
+title = 'My New Hugo Site'
+theme = 'xmin'
+
+
+[menu]
+
+    [[menu.main]]
+        identifier = "home"
+        name = "Home"
+        url = "/"
+        weight = 10
+
+    [[menu.main]]
+        identifier = "Posts"
+        name = "Posts"
+        url = "/posts/"
+        weight = 30

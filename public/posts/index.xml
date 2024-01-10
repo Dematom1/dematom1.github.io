@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on My New Hugo Site</title>
+    <link>https://example.org/posts/</link>
+    <description>Recent content in Posts on My New Hugo Site</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 10 Jan 2024 12:10:46 -0700</lastBuildDate>
+    <atom:link href="https://example.org/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>DF Jobs Architecture</title>
+      <link>https://example.org/posts/df-jobs-architecture/</link>
+      <pubDate>Wed, 10 Jan 2024 12:10:46 -0700</pubDate>
+      <guid>https://example.org/posts/df-jobs-architecture/</guid>
+      <description>DF Jobs Architecture This is the design of DF Jobs production server as well as a seperate server hosting data pipelines and other tooling for an end to end application to data visualization.&#xA;Visit Data First Jobs website to see it live!</description>
+    </item>
+  </channel>
+</rss>
