@@ -9,3 +9,5 @@ draft = false
 This is the design of DF Jobs production server as well as a seperate server hosting data pipelines and other tooling for an end to end application to data visualization.
 
 Visit [Data First Jobs](https://datafirstjobs.com) website to see it live!
+
+![DF Jobs Architecture](/images/DFJobs.png)
