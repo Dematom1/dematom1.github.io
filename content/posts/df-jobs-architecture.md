@@ -5,7 +5,7 @@ draft = false
 +++
 
 # DF Jobs 
-[Data First Jobs](www.datafirstjobs.com) is a job board for data professionals across industries, tech stacks, and more.
+[Data First Jobs](https://datafirstjobs.com) is a job board for data professionals across industries, tech stacks, and more.
 
 It pulls data from third-party job board apis, parses their data and maps it to my apps models using a json schema. 
 
