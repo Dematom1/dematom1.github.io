@@ -1,5 +1,5 @@
 +++
-title = 'DF Jobs Architecture'
+title = 'Ansible'
 date = 2024-01-10T12:10:46-07:00
 draft = false
 +++
