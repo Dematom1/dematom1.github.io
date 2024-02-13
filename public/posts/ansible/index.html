@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ansible | My New Hugo Site</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/posts/">Posts</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Ansible</span></h1>
+
+<h2 class="date">2024/01/10</h2>
+</div>
+
+<main>
+<h1 id="ansible">Ansible</h1>
+<p>When I first moved away from PaaS platforms like Heroku and Render, it quickly became daunting running a VPS manually. Eventually I stumbled upon Ansible.</p>
+<p>Ansible helps automate your server instances, it can manage your servers or hosts from a single workstation. The best part about it is that you don&rsquo;t need to host it on a server, instead you can run it straight from your laptop.</p>
+<h2 id="getting-started-with-ansible">Getting started with Ansible</h2>
+<p>Ansible allows you to ssh into your servers and carry out commands defined in what&rsquo;s called a &ldquo;playbook&rdquo;. You can see already that this means in one repo you can carry out automated instructions that provision your server across various instances.</p>
+<h2 id="ansible-config">Ansible Config</h2>
+<p>Ansible essientially has two groups, a directory with ansible config, and a playbooks config. In the anbile config files, aptly named ansible.cfg, you specifiy an inventory file and a few others.</p>
+<pre><code>    ```yaml
+    [defaults]
+    inventory = inventory.ini
+    remote_user = your_local_machine_user
+    private_key_file = ~/.ssh/private_ssh_key
+    ```
+</code></pre>
+<p>The inventory file holds all of your available servers. The remote user and the private key will allow ansible to ssh into your servers to carry out the commands you specifiy in a playbook.</p>
+<p>I like to create an ansible folder within the root project</p>
+<pre><code>```bash
+mkdir ansible/ 
+touch ansible/ansible.cfg
+cd ansible &amp;&amp; nano ansible.cfg
+```
+</code></pre>
+<p>Afterwards you are ready to define your inventory.</p>
+<h2 id="inventory-file">Inventory File</h2>
+<p>Here you can add your list of servers IPs or if you domain names. There can be many servers here, you can even break them down into groups using roles, but for now we will have all of the servers here configured the same.</p>
+<p>You can define a group of your servers as whatever you like, in this case we will keep it simple - servers.</p>
+<pre><code>```yaml
+[servers]
+1.23.45.678
+2.34.56.789
+```
+</code></pre>
+<p>Here we defined two server IP addresses, if you&rsquo;ve set up ssh keys properly ansible will be able to connect and run your commands in a playbook.</p>
+<h2 id="playbooks">Playbooks</h2>
+<p>A playbook is a yaml file consisting of a list of task. I like to create a playbooks directory:</p>
+<pre><code>```bash
+mkdir playbooks
+touch playbooks/server_setup.yaml
+```
+</code></pre>
+<p>These task can perform anything from creating a user on a remote machine, setting up cron jobs, installing and configuring packages, etc.</p>
+<p>The file is senstive with its syntax, so you want to make sure you are identing properly. Essientialy the file gets converted to a script that runs on your remote machine.</p>
+<p>Here is an example from my own ansible server setup.</p>
+<pre><code>```yaml
+---
+hosts: servers
+become: true
+tasks:
+  - name: Install Packages
+    apt:
+      name:
+      - docker.io
+      - vim-nox
+      - nginx
+      - certbot
+      - python-certbot-nginx
+    state: present
+    update_cache: yes
+  
+  - name: Install Docker Compose
+    get_url: &quot;https://github.com/docker/compose/releases/download/v2.4.1/docker-compose-{{ ansible_system }}-{{ ansible_architecture }}&quot;
+      url: &quot;&quot;
+      dest: &quot;/usr/local/bin/docker-compose&quot;
+      mode: 'u+x,g+x&quot;
+```
+</code></pre>
+<p>Notice the hosts variable, I pass the name of the group of remote machines here, as we specified in our inventory file. That means on every machine this set of code will run.</p>
+<p>This line means that ansible will use sudo to run these commands.</p>
+<pre><code>```yaml
+become: true
+```
+</code></pre>
+<p>It&rsquo;s best practice to create an ansible user on your workstation (i.e., your laptop in this sceanrio), and an ansible user on each of the remote machine to run these commands. Though this is outside of the scope of this post. More on that in a future post.</p>
+<p>Afterwards we define a series of tasks:</p>
+<pre><code>```yaml
+tasks:
+  - name:
+    ...
+```
+</code></pre>
+<p>Each task can be given a name, though not necessary its always best practice. Depending on the type of task you want to pass there are additional arguments.</p>
+<p>In this case we want to install packages across all of our servers.</p>
+<pre><code>```yaml
+tasks:
+  - name: Install Packages
+    apt:
+      name:
+      - docker.io
+      - vim-nox
+      - nginx
+      - certbot
+```
+</code></pre>
+<p>Because my server is a ubuntu machine, I have access to apt directly, depending on your machine&rsquo;s OS you may have to consult ansible docs.</p>
+<p>In this case I amm listing a number of packages that will be on each of the machines. Docker is essiential, vim-nox for my editing needs, nginx, certbot, and python-cerbot-nginx for my reverse proxy and ssl certification generation. That last 3 packages are web app related packages.</p>
+<p>I&rsquo;ll get to nginx and whate are reverse proxies in a future post.</p>
+<p>The last two lines ensures that these packages are installed, and that they are the latest packages available.</p>
+<pre><code>```yaml
+state: present
+update_cache: yes
+```
+</code></pre>
+<p>A great feature of ansible is the impotency of it all. you can add packages later on and run the command and ansible will add the newly added packages.</p>
+<h2 id="putting-it-all-together">Putting it all together</h2>
+<p>Now that you have the essientials set up, you can run ansible!</p>
+<pre><code>```bash
+$ ansile-playbook -i ansible/inventory.ini playbooks/server_setup.yml
+```
+
+```bash
+PLAY [servers] ***************************************************************************************
+
+TASK [Gathering Facts] *******************************************************************************
+pk: [1.23.45.678]
+
+TASK [Install Packages] ********************************************************************************
+changed: [1.23.45.678]
+
+PLAY RECAP *******************************************************************************************
+1.23.45.678                : ok=1    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+```
+</code></pre>
+<p>Again if SSH is all setup then, you should see something like the above in your terminal. Ssh into your machine and check for yourself!</p>
+<h2 id="additional-info">Additional info</h2>
+<p>Ansible can do a great many things, essientially aything you need to setup on your machines can be done through a single ansible repo, you can automate db backups, cron jobs, git repo pulls, and anything else.</p>
+
+</main>
+
+  <footer>
+  
+  
+  </footer>
+  </body>
+</html>
+

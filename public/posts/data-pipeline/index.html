@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Data Pipeline | My New Hugo Site</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/posts/">Posts</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Data Pipeline</span></h1>
+
+<h2 class="date">2024/01/16</h2>
+</div>
+
+<main>
+<h1 id="project-overview">Project Overview</h1>
+<p>This project will simulate a end to end data pipeline for <a href="www.datafirstjobs.com">Data First Jobs</a>. It will consist of the following tools:
+* Kafka
+* Airflow
+* DBT
+* Metabase</p>
+<p>I built <a href="www.datafirstjobs.com">Data First Jobs</a> because not only was I tired of filtering through multiple job boards, but many of those job board did not consistenlty categorize data jobs. In other words, sometimes there were under &ldquo;other&rdquo;, somethings they were under engineeers, but usually they were a mix and few and far between.</p>
+<h2 id="scenario">Scenario</h2>
+<p>We have users, clicks, and applications. Let&rsquo;s pretend we get notified of a users successful application, that is they clicked through the job in the list view, to the detail view, where they went on and applied successfully on the company&rsquo;s website.</p>
+<p>The issue is we need to attribute successful applications to users, the successful_application event will give us the email they used to apply, in this scenario this will be enough to attribute the application event to users, and their clicks.</p>
+<p>Since the website doesn&rsquo;t have too much data at the moment, I will need to generate fake data to push through Kafka to simulate some real time stream processing, with flink thrown in there to handle the more &ldquo;complex&rdquo; transformation. We will feed this fake data through Kafka + Flink and save the results to a Postgres DB that will serve as a sink.</p>
+<p>First I will generate fake data using Faker. I will put this in a seperate container, and run it on initialization with docker compose, so that when the postgres db is ready, it will create the tables required for the datasets as well as the final sink table.</p>
+<p>Below is the click and application event that simulates a user clicking on the home page, as well as the search view where they may or may not have selected a category to filter through, before potentially successfully applying for a job. <a href="https://github.com/Dematom1/data_server/blob/Master/containers/fake_data/gen_fake_data.py">Link</a></p>
+<p>These events are generated in a datastream, where they are subsequently pushed to Kafka. Who is allow for auto creating of topics.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">gen_click_event</span>(user_id: str, job_uuid: str <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>) <span style="color:#f92672">-&gt;</span> dict:
+</span></span><span style="display:flex;"><span>        user_agent: str <span style="color:#f92672">=</span> fake<span style="color:#f92672">.</span>user_agent()
+</span></span><span style="display:flex;"><span>        event_time: datetime <span style="color:#f92672">=</span> datetime<span style="color:#f92672">.</span>now()<span style="color:#f92672">.</span>strftime(<span style="color:#e6db74">&#34;%Y-%m-</span><span style="color:#e6db74">%d</span><span style="color:#e6db74"> %H:%M:%S.</span><span style="color:#e6db74">%f</span><span style="color:#e6db74">&#34;</span>)[:<span style="color:#f92672">-</span><span style="color:#ae81ff">3</span>]
+</span></span><span style="display:flex;"><span>        event_type: str <span style="color:#f92672">=</span> fake<span style="color:#f92672">.</span>job_event_type()
+</span></span><span style="display:flex;"><span>        template_name: str  <span style="color:#f92672">=</span> fake<span style="color:#f92672">.</span>job_template_name()
+</span></span><span style="display:flex;"><span>        element: str <span style="color:#f92672">=</span> fake<span style="color:#f92672">.</span>job_element()
+</span></span><span style="display:flex;"><span>        job_uuid: str <span style="color:#f92672">=</span> job_uuid <span style="color:#f92672">or</span> str(uuid4())
+</span></span><span style="display:flex;"><span>        ip_address: str <span style="color:#f92672">=</span> fake<span style="color:#f92672">.</span>ipv4()
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        click_event <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;user_agent&#39;</span>: user_agent,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;event_time&#39;</span>: event_time,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;job_uuid&#39;</span>: job_uuid,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;event_type&#39;</span>: event_type,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;template_name&#39;</span>: template_name,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;tag&#39;</span>: element,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;job_uuid&#39;</span>: job_uuid,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;user_id&#39;</span>: user_id,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#39;ip_address&#39;</span>: ip_address
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> click_event
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">gen_successful_job_application</span>(event: dict) <span style="color:#f92672">-&gt;</span> dict:
+</span></span><span style="display:flex;"><span>    event_time: datetime <span style="color:#f92672">=</span> datetime<span style="color:#f92672">.</span>now()<span style="color:#f92672">.</span>strftime(<span style="color:#e6db74">&#34;%Y-%m-</span><span style="color:#e6db74">%d</span><span style="color:#e6db74"> %H:%M:%S.</span><span style="color:#e6db74">%f</span><span style="color:#e6db74">&#34;</span>)[:<span style="color:#f92672">-</span><span style="color:#ae81ff">3</span>]
+</span></span><span style="display:flex;"><span>    job_title: str <span style="color:#f92672">=</span> fake<span style="color:#f92672">.</span>job_description()
+</span></span><span style="display:flex;"><span>    company_name: str <span style="color:#f92672">=</span> fake<span style="color:#f92672">.</span>company()
+</span></span><span style="display:flex;"><span>    application_id: str <span style="color:#f92672">=</span> str(uuid4())
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    attr_job_applications <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;application_id&#39;</span>: application_id,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;event_time&#39;</span>: event_time,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;user_id&#39;</span>: event[<span style="color:#e6db74">&#39;user_id&#39;</span>],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;user_agent&#39;</span>: event[<span style="color:#e6db74">&#39;user_agent&#39;</span>],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;ip_address&#39;</span>: event[<span style="color:#e6db74">&#39;ip_address&#39;</span>],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;job_uuid&#39;</span>: event[<span style="color:#e6db74">&#39;job_uuid&#39;</span>],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;job_title&#39;</span>: job_title,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;company_name&#39;</span>: company_name
+</span></span><span style="display:flex;"><span>    }
+</span></span></code></pre></div><p>Now that we have our events, lets plan out the Flink Job.</p>
+<p>First we need the following:</p>
+<ul>
+<li>Source DDL</li>
+<li>Sink DDL</li>
+<li>Process DML</li>
+</ul>
+<p>For the Source DDL we need to map users for the users table, clicks, and applications for the kafka topics. You can find these <a href="https://github.com/Dematom1/data_server/tree/Master/code/source">here</a></p>
+<p>Now we actually need to setup config for Flink and Kafka. <a href="https://github.com/Dematom1/data_server/blob/Master/code/attribute_successful_applications.py">Link</a></p>
+<p>I saw this brillant way to store config variables using dataclasses:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#a6e22e">@dataclass</span>(frozen<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">FlinkJobConfig</span>:
+</span></span><span style="display:flex;"><span>    job_name: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;successful-job-applications&#39;</span>
+</span></span><span style="display:flex;"><span>    jars: List[str] <span style="color:#f92672">=</span> field(default_factory<span style="color:#f92672">=</span><span style="color:#66d9ef">lambda</span>: REQUIRED_JARS)
+</span></span><span style="display:flex;"><span>    parallelism: int <span style="color:#f92672">=</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@dataclass</span>(frozen<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">KafkaConfig</span>:
+</span></span><span style="display:flex;"><span>    connector: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;kafka&#39;</span>
+</span></span><span style="display:flex;"><span>    bootstrap_servers: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;kafka:9092&#39;</span>
+</span></span><span style="display:flex;"><span>    scan_stratup_mode: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;earliest-offset&#39;</span>
+</span></span><span style="display:flex;"><span>    consumer_group_id: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;flink-consumer-group-1&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@dataclass</span>(frozen<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ClickEventTopicConfig</span>(KafkaConfig):
+</span></span><span style="display:flex;"><span>    topic: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;clicks&#39;</span>
+</span></span><span style="display:flex;"><span>    format: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;json&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@dataclass</span>(frozen<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ApplicationTopicConfig</span>(KafkaConfig):
+</span></span><span style="display:flex;"><span>    topic: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;applications&#39;</span>
+</span></span><span style="display:flex;"><span>    format: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;json&#39;</span>
+</span></span></code></pre></div><p>This method prevents someone somehow changing any of the variables, if they do so, it will raise an error. Frozen in place.</p>
+<p>Now that we configured Flink and Kafka, lets get to the crux of the code. The actual processing.</p>
+<p>We need a way to dynamically process the events coming through the topics clicks and applications. From there we need to map the sources, create the sinks, and process the transformation, or in our case attribute the successful applications to our users!</p>
+<p>The following will intialize our Stream Environment, in Flink terms, create a StreamExectutionEnvironment:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_exec_env</span>(config: FlinkJobConfig) <span style="color:#f92672">-&gt;</span> tuple:
+</span></span><span style="display:flex;"><span>    s_env <span style="color:#f92672">=</span> StreamExecutionEnvironment<span style="color:#f92672">.</span>get_execution_environment()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> jar <span style="color:#f92672">in</span> config<span style="color:#f92672">.</span>jars:
+</span></span><span style="display:flex;"><span>        s_env<span style="color:#f92672">.</span>add_jars(jar)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    execution_config <span style="color:#f92672">=</span> s_env<span style="color:#f92672">.</span>get_config()
+</span></span><span style="display:flex;"><span>    execution_config<span style="color:#f92672">.</span>set_parallelism(<span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>    t_env <span style="color:#f92672">=</span> StreamTableEnvironment<span style="color:#f92672">.</span>create(s_env)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> s_env, t_env
+</span></span></code></pre></div><p>From there we will use the table_env, t_env here, and run the queries.
+Now I could have manually put the sql scripts in each of the execution statement, but thats a pain to maintain, plus its better to use well documented schemas, this is where our source, sinks and process DDL come in handy.</p>
+<p>Using Jinja2 we can map each of our table and topic configs, to the Flink DDL scripts we created. After setting up the configs <a href="https://github.com/Dematom1/data_server/blob/Master/code/attribute_successful_applications.py">Link</a></p>
+<p>Here is how we can map them:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">map_sql_query</span>(table: str, type: str <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;source&#39;</span>, template_env: Environment <span style="color:#f92672">=</span> Environment(loader<span style="color:#f92672">=</span>FileSystemLoader(<span style="color:#e6db74">&#39;code/&#39;</span>))) <span style="color:#f92672">-&gt;</span> str:
+</span></span><span style="display:flex;"><span>    config_map <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;clicks&#39;</span>: ClickEventTopicConfig(),
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;applications&#39;</span>: ApplicationTopicConfig(),
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;users&#39;</span> : PostgresUsersTableConfig(),
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;successful_applications&#39;</span> : PostgresConfig(),
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;attribute_successful_applications&#39;</span>: PostgresSuccesfulApplicationsTableConfig()
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> template_env<span style="color:#f92672">.</span>get_template(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">{</span>type<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">{</span>table<span style="color:#e6db74">}</span><span style="color:#e6db74">.sql&#39;</span>)<span style="color:#f92672">.</span>render(
+</span></span><span style="display:flex;"><span>        asdict(config_map<span style="color:#f92672">.</span>get(table))
+</span></span><span style="display:flex;"><span>    )
+</span></span></code></pre></div><p>I know what you are thinking, this is essientially how Django templating works. It basically is.</p>
+<p>I loaded the code directory where the DDL scripts are located, and allowed us to map the intend events and/or data, to the right folders and its script.</p>
+<p>Take the following:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>    table_env<span style="color:#f92672">.</span>execute_sql(map_sql_query(<span style="color:#e6db74">&#39;clicks&#39;</span>))
+</span></span></code></pre></div><p>It will utilize the config at ClickEventTopicConfig(), where we defined the kafka topic we created, then it will execute code/souce/clicks.sql in the Flink table environement against the kafka topic.</p>
+<p>After I run the subsequent applications and users sources, I then create the Sink DDL which we will insert to from the process script. This sink DDL is already configured to our table we create in postgres.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>table_env<span style="color:#f92672">.</span>execute_sql(map_sql_query(<span style="color:#e6db74">&#39;successful_applications&#39;</span>,<span style="color:#e6db74">&#39;sink&#39;</span>))
+</span></span></code></pre></div><p>Then we can run the statement set, this will allow us to run DML statements, in order words Flink will run the transformation as specified and insert it into the sink we defined.</p>
+<p>Here you could execute a multi-sink job. But in my case it&rsquo;s just the one.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>process <span style="color:#f92672">=</span> table_env<span style="color:#f92672">.</span>create_statement_set()
+</span></span><span style="display:flex;"><span>process<span style="color:#f92672">.</span>add_insert_sql(map_sql_query(<span style="color:#e6db74">&#39;attribute_successful_applications&#39;</span>, <span style="color:#e6db74">&#39;process&#39;</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>job  <span style="color:#f92672">=</span> process<span style="color:#f92672">.</span>execute()
+</span></span></code></pre></div><p>Voila!
+Now I&rsquo;ve process a few thousand click events and a couple hundred successful job applications.</p>
+<p>There is still some work to be done. From here I will schedule DAGS with Airflow runnning DBT scripts for the transformation layer, that will then connect to a GCP BigQuery instance, and from there the data can be queried into Metabase ready for you to view!</p>
+<p>I will look to add pipeline reporting tools such as Grafana, and promethesus, for the pipeline. I will host this on a server so that you can view it.</p>
+<p>This is all still a work in progress!</p>
+
+</main>
+
+  <footer>
+  
+  
+  </footer>
+  </body>
+</html>
+
