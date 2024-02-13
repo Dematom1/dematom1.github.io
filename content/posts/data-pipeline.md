@@ -1,7 +1,7 @@
 Snjob+++
 title = 'Data Pipeline'
 date = 2024-01-16T17:50:54-07:00
-draft = true
+draft = false
 +++
 
 
