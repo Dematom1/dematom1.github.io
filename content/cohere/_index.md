@@ -1,13 +1,24 @@
 +++
 title = 'For the Cohere team'
+linkTitle = 'Overview'
 robots = 'noindex, nofollow'
+css = ['css/cohere.css']
+outputs = ['html']
 [build]
   list = 'never'
 [sitemap]
   disable = true
+[[cascade]]
+  robots = 'noindex, nofollow'
+  css = ['css/cohere.css']
+  outputs = ['html']
+  [cascade.build]
+    list = 'local'
+  [cascade.sitemap]
+    disable = true
 +++
 
-Hello. I'm Laszlo Horanszky, a data platform engineer in Calgary, and this page goes with my application for **Member of Technical Staff, Training Infra Engineer**. It shows the work behind my [resume](/resume/), with links, and where I stand against the posting.
+Hello. I'm Laszlo Horanszky, a data platform engineer in Calgary, and this page goes with my application for **Member of Technical Staff, Training Infra Engineer**. This page shows the work behind my [resume](/resume/), with links, and where I stand against the posting. The other tabs show [how I built this application](how-i-built-it/) with a crew of coding agents, and [the prompts I gave them](prompts/).
 
 ## Why this role
 

@@ -1,0 +1,14 @@
+{{ partial "header.html" . }}
+{{ $hub := .FirstSection }}
+<div class="article-meta">
+<h1><span class="title">{{ $hub.Title }}</span></h1>
+</div>
+<nav class="tabs" aria-label="{{ $hub.Title }}">
+{{ range union (slice $hub) $hub.Pages.ByWeight }}
+<a href="{{ .RelPermalink }}"{{ if eq .RelPermalink $.RelPermalink }} aria-current="page"{{ end }}>{{ .LinkTitle }}</a>
+{{ end }}
+</nav>
+<main>
+{{ .Content }}
+</main>
+{{ partial "footer.html" . }}
