@@ -1,0 +1,33 @@
+/* Screen: the theme's look. Print: the approved one-page resume layout (Letter). */
+.resume-download { text-align: right; font-size: .9em; margin: 0; }
+.resume h1 { margin: .2em 0 0; }
+.resume h1 + p { margin-top: .2em; color: #333; }
+.resume h2 {
+  font-size: 1em; letter-spacing: .1em; text-transform: uppercase;
+  border-bottom: 1px solid #333; margin: 1.4em 0 .4em;
+}
+.resume h3, .resume h4 { font-size: 1em; margin: .3em 0 0; }
+.resume h3 { margin-top: .6em; }
+.resume h4 { font-weight: 600; }
+.resume .row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; column-gap: 1em; }
+.resume h3 .r { font-weight: normal; color: #333; }
+.resume .r { white-space: nowrap; }
+.resume ul { padding-left: 1.3em; }
+
+@media print {
+  @page { size: Letter; margin: 0.5in 0.62in; }
+  nav, footer, .resume-download { display: none; }
+  body { max-width: none; margin: 0; padding: 0; font: 10pt/1.34 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1a1a1a; }
+  main { hyphens: manual; }
+  .resume a { color: inherit; text-decoration: underline; text-decoration-color: #999; text-underline-offset: 1.5px; }
+  .resume h1 { font-size: 20pt; font-weight: 700; margin: 0 0 2pt; }
+  .resume h1 + p { margin: 0 0 5pt; }
+  .resume h2 { font-size: 9pt; font-weight: 700; border-bottom: .75pt solid #333; padding-bottom: 1.5pt; margin: 8.5pt 0 3.5pt; }
+  .resume .row { flex-wrap: nowrap; column-gap: 14pt; break-after: avoid; }
+  .resume h3 { margin: 5pt 0 0; }
+  .resume h4 { margin: 1.5pt 0 0; }
+  .resume h3 + h4 { margin-top: 0; }
+  .resume p { margin: 2pt 0; }
+  .resume ul { margin: 1.5pt 0 2pt; padding-left: 13pt; }
+  .resume li { margin: 1.6pt 0; }
+}

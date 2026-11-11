@@ -1,0 +1,6 @@
+{{- $parts := split .Text " | " -}}
+{{- if eq (len $parts) 2 -}}
+<h{{ .Level }} id="{{ .Anchor }}" class="row"><span class="l">{{ index $parts 0 | safeHTML }}</span><span class="r">{{ index $parts 1 | safeHTML }}</span></h{{ .Level }}>
+{{- else -}}
+<h{{ .Level }} id="{{ .Anchor }}">{{ .Text | safeHTML }}</h{{ .Level }}>
+{{- end -}}

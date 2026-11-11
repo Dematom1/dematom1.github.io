@@ -1,0 +1,2 @@
+{{ with .Params.robots }}<meta name="robots" content="{{ . }}">{{ end }}
+{{ range .Params.css }}<link rel="stylesheet" href="{{ . | relURL }}">{{ end }}
