@@ -18,7 +18,7 @@ outputs = ['html']
     disable = true
 +++
 
-Hello. I'm Laszlo Horanszky, a data platform engineer in Calgary, and this page goes with my application for **Member of Technical Staff, Training Infra Engineer**. This page shows the work behind my [resume](/resume/), with links, and where I stand against the posting. The other tabs show [how I built this application](how-i-built-it/) with a crew of coding agents, and [the prompts I gave them](prompts/).
+Hello. I'm Laszlo Horanszky, a data platform engineer in Calgary, and this page goes with my application for **Member of Technical Staff, Training Infra Engineer**. This page shows the work behind my [resume](/resume/), with links, and where I stand against the posting. The other tabs follow [training-harness](/projects/training-harness/), the training project I am building now: [how I'm building it](building/), with the tradeoffs, and [my prompts](prompts/) to the coding agents that help.
 
 ## Why this role
 
