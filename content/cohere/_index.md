@@ -8,6 +8,7 @@ outputs = ['html']
   list = 'never'
 [sitemap]
   disable = true
+# Never listed: Cohere pages stay out of every list, RSS feed and sitemap; the hub's tab bar fetches its pages by path.
 [[cascade]]
   robots = 'noindex, nofollow'
   css = ['css/cohere.css']
