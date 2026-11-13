@@ -13,7 +13,7 @@ outputs = ['html']
   css = ['css/cohere.css']
   outputs = ['html']
   [cascade.build]
-    list = 'local'
+    list = 'never'
   [cascade.sitemap]
     disable = true
 +++
