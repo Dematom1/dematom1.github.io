@@ -11,4 +11,4 @@ url = "/"
 
 Feel free to reach out to laszlo[at]hey.com
 
-### Resume can be downloaded [here](/)
+### Resume can be downloaded [here](/resume/)

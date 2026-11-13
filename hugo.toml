@@ -1,6 +1,6 @@
-baseURL = 'https://example.org/'
-languageCode = 'en-us'
-title = 'My New Hugo Site'
+baseURL = 'https://www.laszloh.me/'
+locale = 'en-us'
+title = 'Laszlo Horanszky'
 theme = 'xmin'
 
 
@@ -17,3 +17,9 @@ theme = 'xmin'
         name = "Posts"
         url = "/posts/"
         weight = 30
+
+    [[menu.main]]
+        identifier = "Projects"
+        name = "Projects"
+        url = "/projects/"
+        weight = 40

@@ -1,0 +1,8 @@
+{{ partial "header.html" . }}
+{{ with .Resources.GetMatch "*.pdf" }}
+<p class="resume-download"><a href="{{ .RelPermalink }}" rel="nofollow">Download PDF</a> &middot; prints to one page</p>
+{{ end }}
+<main class="resume">
+{{ .Content }}
+</main>
+{{ partial "footer.html" . }}
